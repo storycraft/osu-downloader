@@ -1,0 +1,12 @@
+G:\osu!downloader\osu!beatmaps\obj\Release\osu!downloader.csprojResolveAssemblyReference.cache
+G:\osu!downloader\osu!beatmaps\obj\Release\osu!downloader.csproj.CoreCompileInputs.cache
+G:\osu!downloader\bin\Release\osu!downloader.exe
+G:\osu!downloader\bin\Release\osu!downloader.exe.config
+G:\osu!downloader\bin\Release\osu!downloader.pdb
+G:\osu!downloader\bin\Release\ICSharpCode.SharpZipLib.dll
+G:\osu!downloader\obj\Release\osu!downloader.csprojResolveAssemblyReference.cache
+G:\osu!downloader\obj\Release\OsuDownloader.Properties.Resources.resources
+G:\osu!downloader\obj\Release\osu!downloader.csproj.GenerateResource.Cache
+G:\osu!downloader\obj\Release\osu!downloader.csproj.CoreCompileInputs.cache
+G:\osu!downloader\obj\Release\osu!downloader.exe
+G:\osu!downloader\obj\Release\osu!downloader.pdb
