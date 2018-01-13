@@ -1,8 +1,0 @@
-G:\osu!beatmaps\osu!beatmaps\bin\Release\osu!beatmaps.exe.config
-G:\osu!beatmaps\osu!beatmaps\bin\Release\osu!beatmaps.exe
-G:\osu!beatmaps\osu!beatmaps\bin\Release\osu!beatmaps.pdb
-G:\osu!beatmaps\osu!beatmaps\bin\Release\Newtonsoft.Json.dll
-G:\osu!beatmaps\osu!beatmaps\bin\Release\Newtonsoft.Json.xml
-G:\osu!beatmaps\osu!beatmaps\obj\Release\osu!beatmaps.exe
-G:\osu!beatmaps\osu!beatmaps\obj\Release\osu!beatmaps.pdb
-G:\osu!beatmaps\osu!beatmaps\obj\Release\osu!beatmaps.csprojResolveAssemblyReference.cache
