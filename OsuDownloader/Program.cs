@@ -142,7 +142,7 @@ namespace OsuDownloader
                         using (BeatmapSetFile beatmapSetFile = mirror.DowmloadBeatmap(beatmapSet, fileStream, preferNoVid))
                         {
 
-                            Console.Out.WriteLineAsync($"( {downloaded++} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 완료");
+                            Console.Out.WriteLineAsync($"( {++downloaded} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 완료");
                         }
                     }
                 } catch (Exception e)
