@@ -1,16 +1,16 @@
 ﻿using System;
 using OsuDownloader.Beatmap;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.IO;
 using OsuDownloader.Exceptions.Server;
+using Newtonsoft.Json;
 
 namespace OsuDownloader.Server.Mirror
 {
-    class OsuHexide : BeatmapMirror
+    public class OsuHexide : BeatmapMirror
     {
         private readonly string URL = "https://osu.hexide.com";
 
@@ -19,49 +19,47 @@ namespace OsuDownloader.Server.Mirror
         private readonly string FILE_PATH = "download";
         private readonly string FILE_NOVID_PATH = "download/novid";
 
-        public Dictionary<int, OnlineBeatmapSet> CachedList { get; }
+        public Dictionary<int, IBeatmapSet> BeatmapSets { get; }
 
-        public int BeatmapSetCount { get => CachedList.Count; }
+        public int BeatmapSetCount { get => BeatmapSets.Count; }
 
         public string MirrorSite { get => URL; }
 
         public OsuHexide()
         {
-            CachedList = new Dictionary<int, OnlineBeatmapSet>();
+            BeatmapSets = new Dictionary<int, IBeatmapSet>();
 
             HttpWebRequest request = (HttpWebRequest) HttpWebRequest.Create($"{URL}/{DB_PATH}");
             request.UserAgent = Program.USER_AGENT;
 
             using (Stream stream = request.GetResponse().GetResponseStream())
             {
-                using (MemoryStream memStream = new MemoryStream())
+                using (StreamReader streamReader = new StreamReader(stream))
                 {
-                    stream.CopyTo(memStream);
-
-                    byte[] data = memStream.ToArray();
-                    JArray rawArray = JArray.Parse(new string(Encoding.UTF8.GetChars(data)));
-
-                    for (int i = rawArray.Count - 1; i >= 0; i--)
+                    using (JsonTextReader reader = new JsonTextReader(streamReader))
                     {
-                        JToken rawMapSet = rawArray[i];
-                        int rankedId = rawMapSet["ranked_id"].Value<int>();
-                        string rankedName = rawMapSet["title"].Value<string>();
+                        reader.SupportMultipleContent = true;
 
-                        string packageType = rawMapSet["type"].Value<string>();
+                        var serializer = new JsonSerializer();
 
-                        OnlineBeatmapSet set = new OnlineBeatmapSet(rankedName, packageType, rankedId);
-                        CachedList[set.RankedID] = set;
+                        while (reader.Read())
+                        {
+                            if (reader.TokenType == JsonToken.StartObject)
+                            {
+                                RawBeatmapSet rawSet = serializer.Deserialize<RawBeatmapSet>(reader);
+
+                                OnlineBeatmapSet set = new OnlineBeatmapSet(rawSet.Title, rawSet.Type, rawSet.Ranked_id);
+                                BeatmapSets[set.RankedID] = set;
+                            }
+                        }
                     }
-
-                    GC.SuppressFinalize(rawArray);
-                    //to prevent memory leak
                 }
             }
         }
 
-        public BeatmapSetFile DowmloadBeatmap(OnlineBeatmapSet map, FileStream fileStream, bool perferNoVid)
+        public BeatmapSetFile DowmloadBeatmap(IBeatmapSet map, FileStream fileStream, bool perferNoVid)
         {
-            if (!HasBeatmapSet(map))
+            if (!HasBeatmapSet(map.RankedID))
                 throw new BeatmapNotFoundException($"Beatmap set ${map.RankedID} ${map.RankedName} not found");
 
             string fileName = map.RankedID + " " + map.RankedName;
@@ -80,9 +78,20 @@ namespace OsuDownloader.Server.Mirror
             return new BeatmapSetFile(map, fileStream);
         }
 
-        public bool HasBeatmapSet(IBeatmapSet map)
+        public bool HasBeatmapSet(int id)
         {
-            return CachedList.ContainsKey(map.RankedID);
+            return BeatmapSets.ContainsKey(id);
         }
+    }
+
+    class RawBeatmapSet
+    {
+        public int Id { get; set; }
+        public int Ranked_id { get; set; }
+        public string Name { get; set; }
+        public string Title { get; set; }
+        public string Type { get; set; }
+        public string Size { get; set; }
+        public string Date { get; set; }
     }
 }

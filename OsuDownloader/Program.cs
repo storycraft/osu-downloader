@@ -23,14 +23,14 @@ namespace OsuDownloader
 
         private static string osuLocation;
 
-        private static string DownloadFolder { get => osuLocation + Path.DirectorySeparatorChar + "Downloads"; }
-        private static string SongsFolder { get => osuLocation + Path.DirectorySeparatorChar + "Songs"; }
+        private static string DownloadFolder { get => Path.Combine(osuLocation, "Downloads"); }
+        private static string SongsFolder { get => Path.Combine(osuLocation, "Songs"); }
 
         private static bool preferNoVid = false;
 
         public const string USER_AGENT = "osu!downloader";
 
-        private static int downloading = 0;
+        private static int downloaded = 0;
         private static int downloadCount = 0;
 
         [STAThread]
@@ -61,6 +61,8 @@ namespace OsuDownloader
             Console.Out.WriteLine($"로컬 비트맵 리스트 파싱 완료");
             Console.Out.WriteLine($"비트맵 셋 {localDb.BeatmapSets.Count} 개가 발견 되었습니다.");
 
+            Console.Out.WriteLine("----------------------------------------------------");
+
             Console.Out.WriteLine($"미러 서버에서 비트맵 리스트 받아오는 중...");
 
             int counter = 1;
@@ -78,7 +80,23 @@ namespace OsuDownloader
                     counter *= 2;
                 }
             }
-            downloadCount = mirror.BeatmapSetCount - localDb.BeatmapSets.Count;
+
+            Console.Out.WriteLine("----------------------------------------------------");
+
+            BeatmapSearcher localSearcher = new BeatmapSearcher(localDb);
+            BeatmapSearcher mirrorSearcher = new BeatmapSearcher(mirror);
+
+            Console.Out.WriteLine("다운로드 받을 비트맵 셋 제목 검색 키워드를 입력해주세요 (정규식 사용 가능)");
+
+            string keyword = Console.In.ReadLine();
+            localSearcher.TitleKeyword = mirrorSearcher.TitleKeyword = keyword;
+
+            List<IBeatmapSet> havingBeatmapSets = localSearcher.Search();
+            List<IBeatmapSet> queuedBeatmapSets = mirrorSearcher.Search();
+
+            downloadCount = queuedBeatmapSets.Count - havingBeatmapSets.Count;
+
+            Parallel.ForEach(havingBeatmapSets, (IBeatmapSet set) => queuedBeatmapSets.Remove(set));
 
             Console.Out.WriteLine($"비트맵에 동영상을 포함할까요? (Y / N)");
 
@@ -92,27 +110,44 @@ namespace OsuDownloader
                 Console.Out.WriteLine($"예상 용량 {downloadCount * 14.273} MB");
             }
 
+            Console.Out.WriteLine($"비트맵 셋 {downloadCount} 개를 다운로드 합니다");
+
+            Console.Out.WriteLine("----------------------------------------------------");
+
             if (!Directory.Exists(SongsFolder)) Directory.CreateDirectory(SongsFolder);
 
             Console.Out.WriteLine($"다운로드 프로세스가 시작되었습니다.");
 
-            Parallel.ForEach(mirror.CachedList.Values, new ParallelOptions() { MaxDegreeOfParallelism = 50 },ProcessBeatmapSet);
+            Console.Out.WriteLine("----------------------------------------------------");
+
+            Parallel.ForEach(queuedBeatmapSets, new ParallelOptions() { MaxDegreeOfParallelism = 50 },ProcessBeatmapSet);
 
             Console.Out.WriteLine($"다운로드 완료");
+            Console.Out.WriteLine($"아무키나 누르시면 종료됩니다");
+            Console.In.ReadLine();
         }
 
-        private static void ProcessBeatmapSet(OnlineBeatmapSet beatmapSet)
+        private static void ProcessBeatmapSet(IBeatmapSet beatmapSet)
         {
             try
             {
-                Console.Out.WriteLineAsync($"( {downloading++} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 시작");
+                Console.Out.WriteLineAsync($"( {downloaded} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 시작");
                 string safeName = convertToSafeName(beatmapSet.RankedName);
-                using (FileStream fileStream = File.OpenWrite(SongsFolder + Path.DirectorySeparatorChar + beatmapSet.RankedID + " " + safeName + "." + beatmapSet.PackageType)){
-                    using (BeatmapSetFile beatmapSetFile = mirror.DowmloadBeatmap(beatmapSet, fileStream, preferNoVid))
+                string fullFileName = beatmapSet.RankedID + " " + safeName + "." + beatmapSet.PackageType;
+                try
+                {
+                    using (FileStream fileStream = File.Open(Path.Combine(SongsFolder, fullFileName),
+                        FileMode.Create))
                     {
+                        using (BeatmapSetFile beatmapSetFile = mirror.DowmloadBeatmap(beatmapSet, fileStream, preferNoVid))
+                        {
 
-                        Console.Out.WriteLineAsync($"( {downloading} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 완료");
+                            Console.Out.WriteLineAsync($"( {downloaded++} / {downloadCount} ) {beatmapSet.RankedID} {beatmapSet.RankedName} 다운로드 완료");
+                        }
                     }
+                } catch (Exception e)
+                {
+                    Console.Out.WriteLine($"비트맵 파일 쓰기 오류가 발생했습니다 {fullFileName} 다운로드를 건너뜁니다 {e}");
                 }
             } catch (BeatmapNotFoundException)
             {
@@ -125,12 +160,7 @@ namespace OsuDownloader
 
         private static string convertToSafeName(string str)
         {
-            foreach (char invalid in Path.GetInvalidFileNameChars())
-            {
-                str = str.Replace(invalid, '_');
-            }
-
-            return str;
+            return string.Join("_", str.Split(Path.GetInvalidFileNameChars()));
         }
 
         private static BeatmapDb ParseDb(string osuDirectory)

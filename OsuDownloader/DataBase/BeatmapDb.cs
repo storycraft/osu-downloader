@@ -10,7 +10,7 @@ namespace OsuDownloader.DataBase
     public interface BeatmapDb
     {
         Dictionary<int, IBeatmapSet> BeatmapSets { get; }
-        bool HasBeatmap(int id);
+        bool HasBeatmapSet(int id);
 
         
     }

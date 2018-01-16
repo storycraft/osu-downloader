@@ -1,0 +1,10 @@
+G:\osu!downloader\obj\Release\osu!downloader.csprojResolveAssemblyReference.cache
+G:\osu!downloader\obj\Release\osu!downloader.csproj.CoreCompileInputs.cache
+G:\osu!downloader\bin\Release\osu!downloader.exe.config
+G:\osu!downloader\bin\Release\osu!downloader.exe
+G:\osu!downloader\bin\Release\osu!downloader.pdb
+G:\osu!downloader\bin\Release\ICSharpCode.SharpZipLib.dll
+G:\osu!downloader\bin\Release\Newtonsoft.Json.dll
+G:\osu!downloader\bin\Release\Newtonsoft.Json.xml
+G:\osu!downloader\obj\Release\osu!downloader.exe
+G:\osu!downloader\obj\Release\osu!downloader.pdb

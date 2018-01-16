@@ -1,15 +1,15 @@
 ﻿using OsuDownloader.Beatmap;
+using OsuDownloader.DataBase;
 using System.Collections.Generic;
 using System.IO;
 
 namespace OsuDownloader.Server
 {
-    interface BeatmapMirror
+    public interface BeatmapMirror : BeatmapDb
     {
         string MirrorSite { get; }
         int BeatmapSetCount { get; }
-        Dictionary<int, OnlineBeatmapSet> CachedList { get; }
-        bool HasBeatmapSet(IBeatmapSet map);
-        BeatmapSetFile DowmloadBeatmap(OnlineBeatmapSet map,FileStream location,bool perferNoVid);
+
+        BeatmapSetFile DowmloadBeatmap(IBeatmapSet map,FileStream location,bool perferNoVid);
     }
 }

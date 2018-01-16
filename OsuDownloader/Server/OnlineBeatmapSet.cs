@@ -13,6 +13,14 @@ namespace OsuDownloader.Server
 
         public Dictionary<int, Beatmap.IBeatmap> Beatmaps => throw new NotImplementedException();
 
+        public string RankedNameUnicode => throw new NotImplementedException();
+
+        public string Artist => throw new NotImplementedException();
+
+        public string ArtistUnicode => throw new NotImplementedException();
+
+        public List<string> Tags => throw new NotImplementedException();
+
         public OnlineBeatmapSet(string rankedName,string packageType,int rankedId)
         {
             RankedName = rankedName;

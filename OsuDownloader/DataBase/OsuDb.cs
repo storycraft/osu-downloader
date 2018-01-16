@@ -29,7 +29,7 @@ namespace OsuDownloader.DataBase
             Version = version;
         }
 
-        public bool HasBeatmap(int id)
+        public bool HasBeatmapSet(int id)
         {
             return BeatmapSets.ContainsKey(id);
         }

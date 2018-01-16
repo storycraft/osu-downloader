@@ -10,6 +10,12 @@ namespace OsuDownloader.Beatmap
     public class OsuBeatmapSet : IBeatmapSet
     {
         public string RankedName { get; }
+        public string RankedNameUnicode { get; }
+
+        public string Artist { get; }
+        public string ArtistUnicode { get; }
+
+        public List<string> Tags { get; }
 
         public string PackageType { get; }
 
@@ -17,7 +23,10 @@ namespace OsuDownloader.Beatmap
 
         public Dictionary<int, IBeatmap> Beatmaps { get; }
 
-        public OsuBeatmapSet(string rankedName,int rankedId,string packageType)
+        public OsuBeatmapSet(string rankedName, string rankedNameUnicode,
+            string artist,string artistUnicode,
+            List<string> tags,
+            int rankedId,string packageType)
         {
             Beatmaps = new Dictionary<int, IBeatmap>();
             RankedName = rankedName;

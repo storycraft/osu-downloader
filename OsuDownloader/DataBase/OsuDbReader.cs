@@ -45,7 +45,10 @@ namespace OsuDownloader.DataBase
                             set = beatmapSets[info.SetId];
                         else
                         {
-                            set = new OsuBeatmapSet(info.Title, info.SetId, "binary");
+                            set = new OsuBeatmapSet(info.RankedName,info.RankedNameUnicode,
+                                info.Artist,info.ArtistUnicode,
+                                info.Tags,
+                                info.SetId, "binary");
                             beatmapSets[set.RankedID] = set;
                         }
 
@@ -164,7 +167,10 @@ namespace OsuDownloader.DataBase
 
                 byte maniaScrollSpeed = reader.ReadByte();
 
-                return new OsuBeatmap(title,creator,diffcultyName,audioFileName,beatmapId,beatmapSetId);
+                return new OsuBeatmap(title,titleUnicode,
+                    artistName, artistNameUnicode,
+                    new List<string>(songTag.Split(' ')),
+                    creator,diffcultyName,audioFileName,beatmapId,beatmapSetId);
             }
         }
     }
