@@ -7,12 +7,13 @@ using System.Text;
 using System.IO;
 using OsuDownloader.Exceptions.Server;
 using Newtonsoft.Json;
+using OsuDownloader.IO;
 
-namespace OsuDownloader.Server.Mirror
+namespace OsuDownloader.Server.Mirror.Hexide
 {
     public class OsuHexide : BeatmapMirror
     {
-        private readonly string URL = "https://osu.hexide.com";
+        public const string URL = "https://osu.hexide.com";
 
         private readonly string DB_PATH = "beatmaps";
 
@@ -34,26 +35,8 @@ namespace OsuDownloader.Server.Mirror
 
             using (Stream stream = request.GetResponse().GetResponseStream())
             {
-                using (StreamReader streamReader = new StreamReader(stream))
-                {
-                    using (JsonTextReader reader = new JsonTextReader(streamReader))
-                    {
-                        reader.SupportMultipleContent = true;
-
-                        var serializer = new JsonSerializer();
-
-                        while (reader.Read())
-                        {
-                            if (reader.TokenType == JsonToken.StartObject)
-                            {
-                                RawBeatmapSet rawSet = serializer.Deserialize<RawBeatmapSet>(reader);
-
-                                OnlineBeatmapSet set = new OnlineBeatmapSet(rawSet.Title, rawSet.Type, rawSet.Ranked_id);
-                                BeatmapSets[set.RankedID] = set;
-                            }
-                        }
-                    }
-                }
+                foreach (RawBeatmapSet rawSet in JsonUtil.ParseLargeJson<RawBeatmapSet>(stream))
+                    BeatmapSets[rawSet.Ranked_id] = new OnlineBeatmapSet(rawSet.Title,rawSet.Type,rawSet.Ranked_id);
             }
         }
 

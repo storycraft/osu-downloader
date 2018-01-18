@@ -33,5 +33,10 @@ namespace OsuDownloader.Beatmap
             RankedID = rankedId;
             PackageType = packageType;
         }
+
+        public override bool Equals(Object obj)
+        {
+            return RankedID == ((IBeatmapSet)obj).RankedID;
+        }
     }
 }

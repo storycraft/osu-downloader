@@ -112,17 +112,19 @@
     <Compile Include="OsuDownloader\Exceptions\Local\DbParseException.cs" />
     <Compile Include="OsuDownloader\Exceptions\Local\UnSupportedBeatmapSetType.cs" />
     <Compile Include="OsuDownloader\Exceptions\Server\BeatmapNotFoundException.cs" />
+    <Compile Include="OsuDownloader\IO\JsonUtil.cs" />
     <Compile Include="OsuDownloader\IO\OsuBinaryReader.cs" />
     <Compile Include="OsuDownloader\IO\OsuBinaryWriter.cs" />
     <Compile Include="OsuDownloader\IO\TimingPoint.cs" />
     <Compile Include="OsuDownloader\Beatmap\IBeatmapSet.cs" />
     <Compile Include="OsuDownloader\DataBase\OsuDb.cs" />
-    <Compile Include="OsuDownloader\BeatmapSearcher.cs" />
-    <Compile Include="OsuDownloader\Server\Mirror\OsuHexide.cs" />
+    <Compile Include="OsuDownloader\Server\Mirror\Hexide\OsuHexide.cs" />
+    <Compile Include="OsuDownloader\Server\Mirror\Hexide\OsuHexideSearcher.cs" />
     <Compile Include="OsuDownloader\Server\OnlineBeatmapSet.cs" />
     <Compile Include="OsuDownloader\DataBase\BeatmapDb.cs" />
     <Compile Include="OsuDownloader\DataBase\OsuDbReader.cs" />
     <Compile Include="OsuDownloader\Program.cs" />
+    <Compile Include="OsuDownloader\Server\ServerSearchProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="OsuDownloader\Server\BeatmapMirror.cs" />
   </ItemGroup>
@@ -144,6 +146,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="OsuDownloader\UI\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

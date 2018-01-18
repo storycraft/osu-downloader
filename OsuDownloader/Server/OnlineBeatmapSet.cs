@@ -27,5 +27,10 @@ namespace OsuDownloader.Server
             PackageType = packageType;
             RankedID = rankedId;
         }
+
+        public override bool Equals(Object obj)
+        {
+            return RankedID == ((IBeatmapSet)obj).RankedID;
+        }
     }
 }

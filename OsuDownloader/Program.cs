@@ -1,14 +1,14 @@
-﻿using OsuDownloader.Beatmap;
+﻿using Microsoft.Win32;
+using OsuDownloader.Beatmap;
 using OsuDownloader.DataBase;
 using OsuDownloader.Exceptions.Local;
 using OsuDownloader.Exceptions.Server;
+using OsuDownloader.OsuDownloader.Server.Mirror.Hexide;
 using OsuDownloader.Server;
-using OsuDownloader.Server.Mirror;
+using OsuDownloader.Server.Mirror.Hexide;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -37,25 +37,60 @@ namespace OsuDownloader
         static void Main(string[] args)
         {
             Console.Out.WriteLine($"* 진행전 켜진 오스는 닫아주세요.");
+            Console.Out.WriteLine("----------------------------------------------------");
 
-            while (true) {
-                try
+            Task mirrorTask = Task.Run(() =>
+            {
+                int reTryCounter = 1;
+                while (true)
                 {
-                    osuLocation = AskLocation("오스가 설치된 폴더를 선택해 주세요");
-                    if (osuLocation == null)
+                    try
                     {
-                        Application.Exit();
-                        return;
-                    }
-                    if (isValidInstallation(osuLocation))
+                        mirror = new OsuHexide();
                         break;
-                    else
-                        Console.Out.WriteLine("선택된 폴더는 오스 폴더가 아닙니다.");
-                } catch (Exception)
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Out.WriteLine($"미러 서버 접속이 실패 했습니다 {reTryCounter} 초 뒤 재 시도 합니다 {e}");
+                        System.Threading.Thread.Sleep(reTryCounter * 1000);
+                        reTryCounter *= 2;
+                    }
+                }
+            });
+
+            try
+            {
+                osuLocation = TryFindOsuLocation();
+            } catch(Exception)
+            {
+
+            }
+
+            if (osuLocation == null)
+            {
+                Console.Out.WriteLine("오스가 설치된 폴더를 찾을 수 없습니다. 직접 위치를 지정해 주세요");
+                while (true)
                 {
-                    Console.Out.WriteLine("잘못 된 경로 입니다");
+                    try
+                    {
+                        osuLocation = AskLocation("오스가 설치된 폴더를 선택해 주세요");
+                        if (osuLocation == null)
+                        {
+                            Application.Exit();
+                            return;
+                        }
+                        if (isValidInstallation(osuLocation))
+                            break;
+                        else
+                            Console.Out.WriteLine("선택된 폴더는 오스 폴더가 아닙니다.");
+                    }
+                    catch (Exception)
+                    {
+                        Console.Out.WriteLine("잘못 된 경로 입니다");
+                    }
                 }
             }
+
             Console.Out.WriteLine($"로컬 비트맵 리스트 파싱 중...");
             localDb = ParseDb(osuLocation);
             Console.Out.WriteLine($"로컬 비트맵 리스트 파싱 완료");
@@ -63,15 +98,27 @@ namespace OsuDownloader
 
             Console.Out.WriteLine("----------------------------------------------------");
 
-            Console.Out.WriteLine($"미러 서버에서 비트맵 리스트 받아오는 중...");
+            Console.Out.WriteLine($"미러 서버에서 전체 비트맵 리스트 받아오는 중...");
+
+            Console.Out.WriteLine("----------------------------------------------------");
+
+            Task.WaitAny(mirrorTask);
+
+            Console.Out.WriteLine($"미러 서버 : {mirror.MirrorSite}");
+            Console.Out.WriteLine($"비트맵 셋 {mirror.BeatmapSetCount} 개가 발견되었습니다.");
+
+            OsuHexideSearcher mirrorSearcher = new OsuHexideSearcher((OsuHexide) mirror);
+
+            AskKeywords(mirrorSearcher);
 
             int counter = 1;
-            while (true) {
+            List<IBeatmapSet> beatmapSets = null;
+            Console.Out.WriteLine("비트맵 셋 검색중");
+            while (true)
+            {
                 try
                 {
-                    mirror = new OsuHexide();
-                    Console.Out.WriteLine($"미러 서버 : {mirror.MirrorSite}");
-                    Console.Out.WriteLine($"비트맵 셋 {mirror.BeatmapSetCount} 개가 발견되었습니다.");
+                    beatmapSets = mirrorSearcher.GetResult();
                     break;
                 } catch (Exception e)
                 {
@@ -81,22 +128,9 @@ namespace OsuDownloader
                 }
             }
 
-            Console.Out.WriteLine("----------------------------------------------------");
+            List<IBeatmapSet> downloadQueue = ExcludeLocalBeatmapSets(beatmapSets);
 
-            BeatmapSearcher localSearcher = new BeatmapSearcher(localDb);
-            BeatmapSearcher mirrorSearcher = new BeatmapSearcher(mirror);
-
-            Console.Out.WriteLine("다운로드 받을 비트맵 셋 제목 검색 키워드를 입력해주세요 (정규식 사용 가능)");
-
-            string keyword = Console.In.ReadLine();
-            localSearcher.TitleKeyword = mirrorSearcher.TitleKeyword = keyword;
-
-            List<IBeatmapSet> havingBeatmapSets = localSearcher.Search();
-            List<IBeatmapSet> queuedBeatmapSets = mirrorSearcher.Search();
-
-            downloadCount = queuedBeatmapSets.Count - havingBeatmapSets.Count;
-
-            Parallel.ForEach(havingBeatmapSets, (IBeatmapSet set) => queuedBeatmapSets.Remove(set));
+            downloadCount = downloadQueue.Count;
 
             Console.Out.WriteLine($"비트맵에 동영상을 포함할까요? (Y / N)");
 
@@ -120,11 +154,76 @@ namespace OsuDownloader
 
             Console.Out.WriteLine("----------------------------------------------------");
 
-            Parallel.ForEach(queuedBeatmapSets, new ParallelOptions() { MaxDegreeOfParallelism = 50 },ProcessBeatmapSet);
+            Parallel.ForEach(downloadQueue, new ParallelOptions() { MaxDegreeOfParallelism = 50 },ProcessBeatmapSet);
 
             Console.Out.WriteLine($"다운로드 완료");
             Console.Out.WriteLine($"아무키나 누르시면 종료됩니다");
             Console.In.ReadLine();
+        }
+
+        private static string TryFindOsuLocation()
+        {
+            RegistryKey key = Registry.ClassesRoot.OpenSubKey(@"osu\shell\open\command");
+
+            if (key == null)
+                return null;
+
+            string str = key.GetValue("").ToString();
+
+            if (str == null)
+                return null;
+
+            string[] splited = str.Split('"');
+
+            if (splited.Length < 2)
+                return null;
+
+            return Path.GetDirectoryName(splited[1]);
+        }
+
+        private static void AskKeywords(OsuHexideSearcher mirrorSearcher)
+        {
+            Console.Out.WriteLine("다운로드 받을 비트맵 셋 제목 검색 키워드를 입력해주세요 (빈 칸 일시 검색 제외)");
+
+            string keyword = Console.In.ReadLine();
+            if (!string.IsNullOrEmpty(keyword))
+                mirrorSearcher.Title = keyword;
+
+            Console.Out.WriteLine("아티스트 키워드를 입력해주세요 (빈 칸 일시 검색 제외)");
+
+            keyword = Console.In.ReadLine();
+            if (!string.IsNullOrEmpty(keyword))
+                mirrorSearcher.Artist = keyword;
+
+            Console.Out.WriteLine("태그 키워드를 입력해주세요 (빈 칸 일시 검색 제외)");
+
+            keyword = Console.In.ReadLine();
+            if (!string.IsNullOrEmpty(keyword))
+                mirrorSearcher.Tags = keyword;
+
+            Console.Out.WriteLine("비트맵 랭크 상태를 입력해주세요 (빈 칸 일시 모든 상태 선택)");
+            Console.Out.WriteLine("");
+            Console.Out.WriteLine("랭크 상태 목록");
+            Console.Out.WriteLine("Loved = 65536, Ranked = 4096, Approved = 256 Qulified = 16, Pending = 1");
+            Console.Out.WriteLine("더하기도 가능 합니다. 예) Loved + Ranked = 69632");
+
+            keyword = Console.In.ReadLine();
+
+            int stat;
+            if (Int32.TryParse(keyword, out stat))
+                mirrorSearcher.Approved = stat;
+            else
+                mirrorSearcher.Approved = 0x11111;
+        }
+
+        private static List<IBeatmapSet> ExcludeLocalBeatmapSets(List<IBeatmapSet> beatmapSets)
+        {
+            List <IBeatmapSet> copied = new List<IBeatmapSet>(beatmapSets);
+            foreach (IBeatmapSet set in beatmapSets)
+                if (localDb.HasBeatmapSet(set.RankedID))
+                    copied.Remove(set);
+
+            return copied;
         }
 
         private static void ProcessBeatmapSet(IBeatmapSet beatmapSet)
